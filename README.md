@@ -34,14 +34,21 @@ npm run start {paths}
 npm run start ./modules ./node_modules
 ```
 
-List modules and node_modules, watching for updates
-![modules and node_modules directories](examples/full_list.png)
+List modules and node_modules, watching for updates  
 
-Search currently loaded directories
-![searching directories](examples/search_list.png)
+![modules and node_modules directories](examples/full_list.png)  
 
-Prepare request to add a local directory to watch list
-![sending request to add directory](examples/add_dir.png)
 
-Local directory added
+Search currently loaded directories  
+
+![searching directories](examples/search_list.png)  
+
+
+Prepare request to add a local directory to watch list  
+
+![sending request to add directory](examples/add_dir.png)  
+
+
+Local directory added  
+
 ![local directory added](examples/added_dir.png)
