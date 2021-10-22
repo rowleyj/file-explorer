@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+        <link rel="icon" href="./file.png">
+        <title>File Explorer 2.0</title>
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    </head>
+
+    <body>
+        <div id="app">
+            <v-app>
+                <v-main>
+                    <v-container>
+                        <v-row>
+                            <v-col cols="12" md="5" lg="4">
+                                <v-card height="90vh" width="100%" class="overflow-y-auto">
+                                    <v-toolbar color="info" dark>
+                                        Directory
+                                        <v-spacer></v-spacer>
+                                        <v-menu v-model="menu" :close-on-content-click="false" :nudge-width="200"
+                                            offset-x>
+                                            <template v-slot:activator="{ on, attrs }">
+                                                <v-btn icon v-bind="attrs" v-on="on">
+                                                    <v-icon>mdi-plus</v-icon>
+                                                </v-btn>
+                                            </template>
+
+                                            <v-card class="px-2">
+                                                <v-text-field placeholder="Add a directory path" v-model="dirToAdd"
+                                                    hide-details @keydown.enter="requestAddDirectory" clearable
+                                                    clear-icon="mdi-close">
+                                                </v-text-field>
+                                                <v-checkbox label="Present Working Directory" v-model="pwd" disabled>
+                                                </v-checkbox>
+                                                <v-card-actions class="ma-0 pa-0">
+                                                    <v-spacer></v-spacer>
+
+                                                    <v-btn text @click="menu = false">
+                                                        Cancel
+                                                    </v-btn>
+                                                    <v-btn color="primary" text @click="requestAddDirectory">
+                                                        Add
+                                                    </v-btn>
+                                                </v-card-actions>
+                                            </v-card>
+                                        </v-menu>
+
+                                    </v-toolbar>
+                                    <v-sheet class="pa-4">
+                                        <v-text-field v-model="search" label="Search Directories..." flat hide-details
+                                            clearable clear-icon="mdi-close">
+                                        </v-text-field>
+                                    </v-sheet>
+                                    <v-treeview activatable hoverable color="warning" dense :items="folders"
+                                        :search="search">
+                                        <template v-slot:prepend="{ item, open }">
+                                            <v-icon v-if="!item.filetype">
+                                                {{ open ? 'mdi-folder-open' : 'mdi-folder' }}
+                                            </v-icon>
+                                            <v-icon v-else>
+                                                {{ fileIcons[item.filetype] }}
+                                            </v-icon>
+                                        </template>
+                                    </v-treeview>
+
+                                </v-card>
+                            </v-col>
+                            <v-col cols="12" md="7" lg="8">
+                                <v-card height="44vh" width="100%" class="overflow-y-auto mb-4">
+                                    <v-card-title>What File Explorer 2.0 does</v-card-title>
+                                    <v-card-text>
+                                        <v-list>
+                                            <v-list-item>
+                                                Takes in list of path arguments
+                                            </v-list-item>
+                                            <v-list-item>
+                                                Watches folders for file updates and nested folder updates
+                                            </v-list-item>
+                                            <v-list-item>
+                                                Updates in realtime using WebSocket for communication
+                                            </v-list-item>
+                                            <v-list-item>
+                                                Allows you to search for nested files and folders
+                                            </v-list-item>
+                                            <v-list-item>
+                                                Allows for additional directories in the Present Working Directory to be
+                                                observed
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-card-text>
+                                </v-card>
+                                <v-card height="44vh" width="100%" class="overflow-y-auto">
+                                    <v-card-title>What File Explorer 2.0 does not do (and why)</v-card-title>
+                                    <v-card-text>
+                                        <v-list>
+                                            <v-list-item>
+                                                Watch for top level folder changes (not supported by chokidar, can be
+                                                done
+                                                by observing parent directory but deemed out of scope)
+                                            </v-list-item>
+                                            <v-list-item>
+                                                Use secure Websocket protocol (only for local use so not necessary)
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-card-text>
+
+                                </v-card>
+
+                            </v-col>
+                        </v-row>
+
+                        <v-snackbar v-model="snackbar" :timeout="2000" shaped right top>
+                            {{ snackText }}
+
+                            <template v-slot:action="{ attrs }">
+                                <v-btn text v-bind="attrs" @click="snackbar = false">
+                                    Close
+                                </v-btn>
+                            </template>
+                        </v-snackbar>
+                    </v-container>
+
+                </v-main>
+                <v-footer>
+                    <v-container>
+                        <v-card class="info" width="100%" dark>
+                            <v-card-text>
+                                <v-row justify="center">
+                                    <v-btn icon @click="openLink('https://github.com')">
+                                        <v-icon>mdi-github</v-icon>
+                                    </v-btn>
+                                    <v-btn icon @click="openLink('https://www.linkedin.com/in/jessewrowley/')">
+                                        <v-icon>mdi-linkedin</v-icon>
+                                    </v-btn>
+                                    <v-spacer></v-spacer>
+                                    <v-tooltip top>
+                                        <template v-slot:activator="{ on, attrs }">
+                                            <v-btn @click="connect()" icon v-bind="attrs" v-on="on">
+                                                <v-icon>mdi-refresh</v-icon>
+                                            </v-btn>
+                                        </template>
+                                        <span>Force websocket to reconnect</span>
+                                    </v-tooltip>
+
+                                </v-row>
+                            </v-card-text>
+                        </v-card>
+                    </v-container>
+
+                </v-footer>
+            </v-app>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+        <script>
+            new Vue({
+                el: '#app',
+                vuetify: new Vuetify(),
+                data: () => ({
+                    menu: false,
+                    search: '',
+                    ws: null,
+                    keepAliveInterval: null,
+                    fileIcons: {
+                        html: 'mdi-language-html5',
+                        js: 'mdi-nodejs',
+                        json: 'mdi-code-json',
+                        md: 'mdi-language-markdown',
+                        pdf: 'mdi-file-pdf',
+                        png: 'mdi-file-image',
+                        txt: 'mdi-file-document-outline',
+                        xls: 'mdi-file-excel',
+                    },
+                    folderIdCounter: 0,
+                    folders: [],
+                    dirToAdd: '',
+                    pwd: true,
+                    snackbar: false,
+                    snackText: ''
+                }),
+                async mounted() {
+                    this.connect();
+                },
+                methods: {
+                    /**
+                     * Sends message over WS to request a directory be watched
+                     */
+                    requestAddDirectory() {
+                        this.ws.send(JSON.stringify({ data: { add: this.dirToAdd, pwd: this.pwd } }));
+                        this.setSnackbar(`Fetching ${this.dirToAdd}...`)
+
+                        // close menu and reset value
+                        this.menu = false;
+                        this.dirToAdd = '';
+
+                    },
+                    /**
+                     * Sets snackbar to alert user of events
+                     * @param {String} text - Text to display in snackbar
+                     */
+                    setSnackbar(text) {
+                        this.snackbar = true;
+                        this.snackText = text;
+                    },
+                    connect() {
+                        this.clearFolders();
+                        this.ws = new WebSocket('ws://localhost:8080');
+
+                        this.ws.onopen = (event) => {
+                            console.log("WebSocket is open now.");
+                            this.keepAlive();
+                        };
+
+                        this.ws.addEventListener('message', (event) => {
+                            try {
+                                let msg = JSON.parse(event.data);
+                                const data = msg.data;
+                                if (!data || data === 'pong') return;
+                                else {
+                                    // process directory changes                                    
+                                    if (data.update && data.update.add) this.addDirectory(data.update.add)
+                                    else if (data.update && data.update.remove) this.removeDirectory(data.update.remove)
+                                }
+                            } catch (error) {
+                                console.log(error, event);
+                            }
+
+                        });
+
+                        this.ws.onclose = (event) => {
+                            clearInterval(this.keepAliveInterval);
+                            this.keepAliveInterval = null;
+                            this.setSnackbar('Websocket disconnected. Files will no longer be updated');
+                        };
+
+                        this.ws.onerror = (err) => {
+                            console.error(err);
+                            this.connect();
+                        }
+                    },
+                    clearFolders() {
+                        this.folders.splice(0, this.folders.length);
+                    },
+                    /**
+                     * Returns the child of a parent in the tree
+                     * @param {String} pathName - name of the child (filename/filepath)
+                     * @param {Object} parent - treenode
+                     */
+                    getChild(pathName, parent) {
+                        if (!parent.children) {
+                            throw Error('No children')
+                        } else {
+                            return parent.children.find(child => child.name == pathName);
+                        }
+                    },
+                    /**
+                     * Adds directory to vue instance
+                     * @param {string || string[]} dir - parent dir, or list of path to dir
+                     * */
+                    addDirectory(dir) {
+                        let path = dir.length === 1 ? dir[0].split('\\') : dir;
+                        if (path.length == 1) {
+                            this.folders.push(this.getNode(path[0]))
+                        } else {
+                            let i = 0;
+                            parent = this.folders.find(folder => folder.name == path[0]);
+                            i++
+                            console.log(parent, i)
+
+                            if (!parent) {
+                                console.log('here');
+                                this.folders.push(this.getNode(path[0]))
+                                parent = this.folders.find(folder => folder.name == path[0]);
+                                console.log(parent, i)
+
+                            }
+                            while (i < path.length - 1) {
+                                // // handle nested folder add attempt
+                                let prevParent = parent;
+                                parent = this.getChild(path[i], parent)
+                                // if no child exists, add then rereference
+                                if (!parent) {
+                                    prevParent.children.push(this.getNode(path[i]))
+                                    parent = this.getChild(path[i], prevParent)
+                                }
+                                i++;
+                            }
+                            parent.children.push(this.getNode(path[path.length - 1]))
+                        }
+                    },
+                    removeDirectory(dir) {
+                        // split escaped filepaths
+                        let path = dir.length === 1 ? dir[0].split('\\') : dir;
+                        if (path.length === 1) {
+                            let idx = this.folders.findIndex(folder => folder.name === path[0]);
+                            this.folders.splice(idx, 1);
+                        } else {
+                            let i = 0;
+                            parent = this.folders.find(folder => folder.name == path[0]);
+                            i++
+                            while (i < path.length - 1) {
+                                parent = this.getChild(path[i], parent)
+                                i++;
+                            }
+                            let idx = parent.children.findIndex(folder => folder.name === path[0]);
+                            parent.children.splice(idx, 1);
+                        }
+
+                    },
+                    /**
+                     * Initiates a keep alive interval with websocket
+                     */
+                    keepAlive() {
+                        this.keepAliveInterval = setInterval(() => this.ws.send(JSON.stringify({ data: 'ping' })), 2500);
+                    },
+                    /**
+                     * Returns a wrapped node for the vuetify treeviewer
+                     * @param {String} name - Folder/File name to display
+                     */
+                    getNode(name) {
+                        return {
+                            name, id: this.folderIdCounter++, children: [], filetype: this.getFiletype(name)
+                        }
+                    },
+                    /**
+                     * Checks if file, and if is returns filetype
+                     * @param {String} name - filepath/filename
+                     */
+                    getFiletype(name) {
+                        let split = name.split('.');
+                        return split[1] ? split[1] : null;
+                    },
+                    openLink(link) {
+                        window.open(link, '_blank');
+                    }
+                }
+
+            })
+        </script>
+    </body>
+
+</html>
