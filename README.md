@@ -2,7 +2,7 @@
 ## Vue & NodeJs In-Browser Files
 
 ## How it works
-The script initializes an express server that serves the client a Vue.js frontend via via '/'(index.html), and sets up a websocket server alongside chokidar filesystem watchers. These watchers fire events on directory additions and removals (unlinks), as well as file additions and removals(unlinks). These events are then used to parse the path of the change, and send it along information dictating the change to the client via the websocket.
+The script initializes an express server that serves the client a Vue.js frontend via via '/'(index.html), and sets up a websocket server alongside [chokidar](https://www.npmjs.com/package/chokidar) filesystem watchers. The chokidar package was chosen over native NodeJS file system watchers as they reduce CPU usage, and work cross platform (this project was developed exclusively on Windows 11). These watchers fire events on directory additions and removals (unlinks), as well as file additions and removals(unlinks). These events are then used to parse the path of the change, and send it along information dictating the change to the client via the websocket.
 
 ![Simple High Level Diagram Showing Data Paths](diagram.png)
 
