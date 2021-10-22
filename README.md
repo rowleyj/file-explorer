@@ -6,15 +6,6 @@ The script initializes an express server that serves the client a Vue.js fronten
 
 ![Simple High Level Diagram Showing Data Paths](diagram.png)
 
-## Examples
-```sh
-npm run start ./modules ./node_modules
-```
-![modules and node_modules directories](examples/full_list.png)
-![searching directories](examples/search_list.png)
-![sending request to add directory](examples/add_dir.png)
-![local directory added](examples/added_dir.png)
-
 
 ## Features
 
@@ -37,3 +28,20 @@ The intention behind this project was to create a lightweight in-browser directo
 cd file-explorer
 npm run start {paths}
 ```
+
+## Examples
+```sh
+npm run start ./modules ./node_modules
+```
+
+List modules and node_modules, watching for updates
+![modules and node_modules directories](examples/full_list.png)
+
+Search currently loaded directories
+![searching directories](examples/search_list.png)
+
+Prepare request to add a local directory to watch list
+![sending request to add directory](examples/add_dir.png)
+
+Local directory added
+![local directory added](examples/added_dir.png)
