@@ -6,6 +6,16 @@ The script initializes an express server that serves the client a Vue.js fronten
 
 ![Simple High Level Diagram Showing Data Paths](diagram.png)
 
+## Examples
+```sh
+npm run start ./modules ./node_modules
+```
+![modules and node_modules directories](examples/full_list.png)
+![searching directories](examples/search_list.png)
+![sending request to add directory](examples/add_dir.png)
+![local directory added](examples/added_dir.png)
+
+
 ## Features
 
 - Run with multiple paths to get real-time updates for your directories

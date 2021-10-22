@@ -33,7 +33,6 @@ class DirectoryWatcher {
                 this.sendUpdate({ remove: this.parsePathUpdate(dirPath) })
             })
             .on('add', dirPath => this.sendUpdate({ add: this.parsePathUpdate(dirPath) }))
-            .on('change', dirPath => console.log(`File ${dirPath} has been changed`))
             .on('unlink', dirPath => this.sendUpdate({ remove: this.parsePathUpdate(dirPath) }));
     }
 
@@ -56,7 +55,6 @@ class DirectoryWatcher {
             }
         }
         if (this.ws.readyState === 1) {
-            console.log(this.dir, update)
             this.ws.send(JSON.stringify(msg));
         } else {
             console.log('Please refresh websocket');

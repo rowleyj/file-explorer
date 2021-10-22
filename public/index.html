@@ -182,7 +182,8 @@
                     dirToAdd: '',
                     pwd: true,
                     snackbar: false,
-                    snackText: ''
+                    snackText: '',
+                    wsReconnectDelay: 1000
                 }),
                 async mounted() {
                     this.connect();
@@ -213,7 +214,6 @@
                         this.ws = new WebSocket('ws://localhost:8080');
 
                         this.ws.onopen = (event) => {
-                            console.log("WebSocket is open now.");
                             this.keepAlive();
                         };
 
@@ -228,7 +228,7 @@
                                     else if (data.update && data.update.remove) this.removeDirectory(data.update.remove)
                                 }
                             } catch (error) {
-                                console.log(error, event);
+                                console.error(error, event);
                             }
 
                         });
@@ -241,7 +241,10 @@
 
                         this.ws.onerror = (err) => {
                             console.error(err);
-                            this.connect();
+                            setTimeout(() => {
+                                this.connect();
+                                this.wsReconnectDelay = this.wsReconnectDelay * 2;  // use a backoff
+                            }, this.wsReconnectDelay);
                         }
                     },
                     clearFolders() {
@@ -271,14 +274,11 @@
                             let i = 0;
                             parent = this.folders.find(folder => folder.name == path[0]);
                             i++
-                            console.log(parent, i)
 
+                            // check if 1st node is undefined (initial conditions)
                             if (!parent) {
-                                console.log('here');
                                 this.folders.push(this.getNode(path[0]))
                                 parent = this.folders.find(folder => folder.name == path[0]);
-                                console.log(parent, i)
-
                             }
                             while (i < path.length - 1) {
                                 // // handle nested folder add attempt
