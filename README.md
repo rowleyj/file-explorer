@@ -22,12 +22,13 @@ The intention behind this project was to create a lightweight in-browser directo
 - [node.js] - V8 runtime for javascript 
 - [Express] - lightweight framework, used for serving static files
 
-## Installation
+## Installation and Setup
 
 ```sh
 cd file-explorer
 npm run start {paths}
 ```
+Go to http://localhost:3000
 
 ## Examples
 ```sh
